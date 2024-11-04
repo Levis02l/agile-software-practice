@@ -11,12 +11,11 @@ services:
       - ENABLE_WRITING_HANDLERS=false
     networks:
       - movies-network
-    depends_on:
-      - mongodb
-      - redis
+      - redis-network  # movies-api 与 redis 位于同一网络上
 
   mongodb:
     image: mongo:8.0-rc
+    container_name: mongodb
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
@@ -27,6 +26,7 @@ services:
 
   mongo-express:
     image: mongo-express:1.0-20-alpine3.19
+    container_name: mongo-express
     ports:
       - 8081:8081
     environment:
@@ -34,17 +34,20 @@ services:
       - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGODB_PASSWORD}
       - ME_CONFIG_MONGODB_SERVER=mongodb
     networks:
-      - movies-network
+      - movies-network  # Only in the same network as mongodb
     depends_on:
       - mongodb
 
   redis:
     image: redis:alpine
+    container_name: redis
     networks:
-      - movies-network
+      - redis-network  # Only on the same network as movies-api
 
 networks:
   movies-network:
+    driver: bridge
+  redis-network:
     driver: bridge
 
 volumes:
