@@ -11,7 +11,7 @@ services:
       - ENABLE_WRITING_HANDLERS=false
     networks:
       - movies-network
-      - redis-network  # movies-api 与 redis 位于同一网络上
+      - redis-network
 
   mongodb:
     image: mongo:8.0-rc
@@ -34,7 +34,7 @@ services:
       - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGODB_PASSWORD}
       - ME_CONFIG_MONGODB_SERVER=mongodb
     networks:
-      - movies-network  # Only in the same network as mongodb
+      - movies-network
     depends_on:
       - mongodb
 
@@ -42,7 +42,25 @@ services:
     image: redis:alpine
     container_name: redis
     networks:
-      - redis-network  # Only on the same network as movies-api
+      - redis-network
+
+  seed:
+    image: node:alpine
+    container_name: seed-db
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: ["node", "seed.js"]
+    environment:
+      - MONGODB_USERNAME=${MONGODB_USERNAME}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      - MONGODB_URI=mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongodb:27017
+    networks:
+      - movies-network
+    depends_on:
+      - mongodb
+    deploy:
+      replicas: ${SEED_DB_REPLICAS:-0} 
 
 networks:
   movies-network:
