@@ -1,7 +1,51 @@
+version: '3'
 services:
-
-  api:
+  movies-api:
     image: doconnor/movies-api:1.0
     container_name: movies-api
     ports:
       - '9000:9000'
+    environment:
+      - MONGODB_URI=mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongodb:27017
+      - REDIS_URI=redis://redis
+      - ENABLE_WRITING_HANDLERS=false
+    networks:
+      - movies-network
+    depends_on:
+      - mongodb
+      - redis
+
+  mongodb:
+    image: mongo:8.0-rc
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
+    networks:
+      - movies-network
+    volumes:
+      - mongodb-data:/data/db
+
+  mongo-express:
+    image: mongo-express:1.0-20-alpine3.19
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGODB_USERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGODB_PASSWORD}
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    networks:
+      - movies-network
+    depends_on:
+      - mongodb
+
+  redis:
+    image: redis:alpine
+    networks:
+      - movies-network
+
+networks:
+  movies-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
